@@ -92,7 +92,7 @@ class BaseEndpoint:
 
     def __getattribute__(self, name: str) -> Any:
         obj = super().__getattribute__(name)
-        if not self.type_checking:
+        if name == 'type_checking' and not obj:
             return obj
         elif name.startswith("_"):
             return obj
