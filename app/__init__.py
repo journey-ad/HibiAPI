@@ -5,8 +5,6 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.middleware import Middleware
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic.error_wrappers import ValidationError
 from utils.config import Config
 from utils.exceptions import (
@@ -21,17 +19,6 @@ from utils.log import logger
 from app.bilibili import router as BilibiliRouter
 from app.pixiv import router as PixivRouter
 
-
-middleware = [
-    Middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-]
-
 app = FastAPI(
     debug=Config["debug"].as_bool(),
     title="HibiAPI",
@@ -39,7 +26,6 @@ app = FastAPI(
     description="An alternative implement of Imjad API",
     docs_url="/docs/test",
     redoc_url="/docs",
-    middleware=middleware,
     responses=RESPONSE_CONDITIONS,  # type:ignore
 )
 app.include_router(PixivRouter, prefix="/pixiv")
@@ -56,6 +42,11 @@ app.add_middleware(
 @app.get("/", include_in_schema=False)
 async def redirect():
     return Response(status_code=302, headers={"Location": "/docs"})
+
+
+@app.get("/heart-beat", include_in_schema=False)
+async def heartbeat():
+    return {"msg": "alive"}
 
 
 @app.exception_handler(HTTPException)
