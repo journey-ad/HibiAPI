@@ -8,7 +8,7 @@
 # An alternative implement of Imjad API
 
 debug: false # 是否开启Debug模式
-version: 0.2.0 # 程序版本, 勿动
+version: 0.3.0 # 程序版本, 勿动
 
 server:
   host: 127.0.0.1 # 监听主机
@@ -29,5 +29,5 @@ log:
   format: > # 输出日志格式, 如果没有必要请不要修改
     <level>
     <v>{level:<8}</v>
-    [{time:YYYY/MM/DD} {time:HH:mm:ss.SSS} <d>{module}:{name}</d>]</level>
+    [{time:YYYY/MM/DD} {time:HH:mm:ss.SSS} <d>{module}:{name}:{line}</d>]</level>
     {message}
