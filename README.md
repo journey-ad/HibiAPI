@@ -1,5 +1,7 @@
 <div align="center">
 
+![HibiAPI Logo](.github/logo.svg)
+
 # HibiAPI
 
 [![Demo Version](https://img.shields.io/badge/dynamic/json?label=demo%20status&query=%24.info.version&url=https%3A%2F%2Fapi.obfs.dev%2Fopenapi.json&style=for-the-badge&color=lightblue)](https://api.obfs.dev)
@@ -61,16 +63,11 @@
 
 1. 保存本仓库到本地目录, 命令行进入该目录
 
-2. 安装`poetry`
-    - 通常来讲,你只需要执行 `pip install poetry`
-    - 如果你遇到一些权限问题或者安装后无法使用, 请自行解决
+2. [安装`poetry`](https://python-poetry.org/docs/#installation)
 
 3. 激活虚拟环境
-
-```shell
-poetry install #安装本项目依赖 (可能需要较长时间)
-poetry shell #进入激活了虚拟环境的shell
-```
+    - `poetry install` 安装本项目依赖 (可能需要较长时间)
+    - `poetry shell` 进入激活了虚拟环境的shell
 
 ### 运行程序
 
@@ -82,10 +79,10 @@ poetry shell #进入激活了虚拟环境的shell
 2. 运行程序
     - 在虚拟环境中直接输入 `python main.py` 即可
 
-
 ## 鸣谢
 
 > - [@journey-ad](https://github.com/journey-ad) 大佬的 [Imjad API](https://api.imjad.cn/)
 > - 为本项目实现API提供参考的各种开源项目
 >   - Pixiv: [`Mikubill/pixivpy-async`](https://github.com/Mikubill/pixivpy-async) [`upbit/pixivpy`](https://github.com/upbit/pixivpy)
 >   - Bilibili: [`SocialSisterYi/bilibili-API-collect`](https://github.com/SocialSisterYi/bilibili-API-collect) [`soimort/you-get`](https://github.com/soimort/you-get)
+>   - 网易云音乐: [`metowolf/NeteaseCloudMusicApi`](https://github.com/metowolf/NeteaseCloudMusicApi) [`greats3an/pyncm`](https://github.com/greats3an/pyncm) [`Binaryify/NeteaseCloudMusicApi`](https://github.com/Binaryify/NeteaseCloudMusicApi)
