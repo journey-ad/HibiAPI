@@ -1,4 +1,4 @@
-name: Testing
+name: Test
 
 on:
   workflow_dispatch:
@@ -10,40 +10,88 @@ on:
       - master
 
 jobs:
-  lint:
+  count:
     runs-on: ubuntu-latest
-    name: Code Testing
+    name: Count Code
 
-    if: ${{! contains( github.event.head_commit.message , 'forward:' ) }}
+    if: "!contains(github.event.head_commit.message,'forward:')"
 
     steps:
-      - name: Clone Repository
+      - name: Clone repository
         uses: actions/checkout@v2
 
-      - name: Set up Python Environment
+      - name: Install CLoC
+        run: |
+          sudo apt-get install -y cloc
+
+      - name: Count lines of code
+        run: |
+          cloc .
+
+  docker:
+    runs-on: ubuntu-latest
+    name: Docker Build
+    needs: [count]
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Test Docker build
+        run: |
+          docker build .
+
+  test:
+    runs-on: ubuntu-latest
+    name: Testing
+    needs: [count]
+
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
+      fail-fast: false
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/pypoetry/cache
+            ~/.cache/pypoetry/artifacts
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-poetry-
 
       - name: Cache pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+          restore-keys: ${{ runner.os }}-pip-
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           pip install poetry
-          poetry export -f requirements.txt -o /tmp/requirements.txt --dev
-          pip install -r /tmp/requirements.txt
+          poetry install -vvv
 
-      - name: Start Testing
+      - name: Testing with pytest
+        continue-on-error: true
         env:
           ENVIRONMENTS: ${{ secrets.DOTENV_FILE }}
         run: |
           export $ENVIRONMENTS
-          echo $ENVIRONMENTS > configs/.env
-          pytest
+          touch configs/.env
+          poetry run pytest
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: logs-${{ matrix.python-version }}
+          path: data/logs
