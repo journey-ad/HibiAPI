@@ -3,12 +3,12 @@ import inspect
 from enum import Enum
 from threading import current_thread
 from types import TracebackType
-from typing import Any, Callable, Dict, Mapping, Optional, Type
+from typing import Any, Callable, Dict, Mapping, Optional, Type, Union
 from urllib.parse import ParseResult, urlparse
 
 from fastapi.routing import APIRouter
 from httpx import URL, AsyncClient, Cookies, Request, Response, TransportError
-from pydantic import Extra, validate_arguments
+from pydantic import validate_arguments
 
 from .decorators import Retry
 from .log import logger
@@ -21,15 +21,14 @@ def exclude_params(func: Callable, params: Mapping[str, Any]) -> Dict[str, Any]:
 
 class SlashRouter(APIRouter):
     def api_route(self, path: str, **kwargs):
-        return super().api_route(
-            path=(path if path.startswith("/") else ("/" + path)), **kwargs
-        )
+        path = path if path.startswith("/") else ("/" + path)
+        return super().api_route(path, **kwargs)
 
 
 class AsyncHTTPClient(AsyncClient):
     @Retry(exceptions=[TransportError])
-    async def request(self, *args, **kwargs):
-        return await super().request(*args, **kwargs)
+    async def request(self, method: str, url: Union[URL, str], **kwargs):
+        return await super().request(method, url, **kwargs)
 
 
 class BaseNetClient:
@@ -88,8 +87,17 @@ class BaseNetClient:
         await self.clients.pop(tid).__aexit__(exc_type, exc_value, traceback)
 
     def __del__(self):
+        try:
+            asyncio.get_event_loop()
+        except ImportError:
+            return
         asyncio.ensure_future(
-            asyncio.gather(*map(lambda f: f.aclose(), self.clients.values()))
+            asyncio.gather(
+                *map(
+                    lambda f: f.aclose(),
+                    self.clients.values(),
+                ),
+            )
         )
 
 
@@ -127,10 +135,4 @@ class BaseEndpoint:
             return obj
         elif not self.type_checking:
             return obj
-        return validate_arguments(
-            obj,
-            config={
-                "extra": Extra.forbid,
-                "allow_mutation": False,
-            },
-        )
+        return validate_arguments(obj)

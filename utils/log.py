@@ -3,21 +3,25 @@ import re
 import sys
 from asyncio.log import logger as _asyncioLogger
 from datetime import timedelta
-from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
+import sentry_sdk.integrations.logging as sentry
 from loguru import logger as _logger
 
-from .config import Config
+from .config import DATA_PATH, Config
 
 if TYPE_CHECKING:
     from loguru import Logger
 
 
-LOG_PATH = Path(".") / "data" / "logs"
+LOG_PATH = DATA_PATH / "logs"
 LOG_PATH.mkdir(parents=True, exist_ok=True)
 LOG_FORMAT = Config["log"]["format"].as_str().strip()
-LOG_LEVEL = Config["log"]["level"].as_str().upper()
+LOG_LEVEL = (
+    Config["log"]["level"]
+    .get(Literal["TRACE", "DEBUG", "INFO", "WARNING", "ERROR"])  # type:ignore
+    .upper()
+)
 
 
 logger: "Logger" = _logger.opt(colors=True)
@@ -37,10 +41,14 @@ logger.add(
     filter=lambda record: record["level"].no < 30,
 )
 logger.add(sys.stderr, level="WARNING", format=LOG_FORMAT)
-logger.level(Config["log"]["level"].as_str().upper())
+logger.add(sentry.BreadcrumbHandler(), level=LOG_LEVEL)
+logger.add(sentry.EventHandler(), level="ERROR")
+logger.level(LOG_LEVEL)
 
 
 class LoguruHandler(logging.Handler):
+    _tag_escape_re = re.compile(r"</?((?:[fb]g\s)?[^<>\s]*)>")
+
     def emit(self, record: logging.LogRecord):
         try:
             level = logger.level(record.levelname).name
@@ -56,9 +64,9 @@ class LoguruHandler(logging.Handler):
             level, ("<e>" + self._escape_tag(message) + "</e>")
         )
 
-    @staticmethod
-    def _escape_tag(s: str) -> str:
-        return re.sub(r"</?((?:[fb]g\s)?[^<>\s]*)>", r"\\\g<0>", s)
+    @classmethod
+    def _escape_tag(cls, string: str) -> str:
+        return cls._tag_escape_re.sub(r"\\\g<0>", string)
 
 
 _asyncioLogger.handlers.clear()
